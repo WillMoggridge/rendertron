@@ -28,6 +28,7 @@ const botUserAgents = module.exports.botUserAgents = [
   'bingbot',
   'embedly',
   'facebookexternalhit',
+  'googlebot',
   'linkedinbo',
   'outbrain',
   'pinterest',
