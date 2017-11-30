@@ -1,7 +1,21 @@
-# Dockerfile extending the generic Node image with application files for a
-# single application.
-FROM gcr.io/google_appengine/nodejs
-LABEL name="bot-render" \ 
+FROM ubuntu:xenial
+
+# System dependencies
+RUN apt-get update && apt-get install --yes curl xz-utils
+
+# Get nodejs
+RUN mkdir /usr/lib/nodejs && \
+    curl https://nodejs.org/dist/v8.9.1/node-v8.9.1-linux-x64.tar.xz | tar -xJ -C /usr/lib/nodejs && \
+    mv /usr/lib/nodejs/node-v8.9.1-linux-x64 /usr/lib/nodejs/node-v8.9.1
+
+# Set nodejs paths
+ENV NODEJS_HOME=/usr/lib/nodejs/node-v8.9.1
+ENV PATH=$NODEJS_HOME/bin:$PATH
+
+# Node dependencies
+RUN npm install --global yarn
+
+LABEL name="bot-render" \
       version="0.1" \
       description="Renders a webpage for bot consumption (not production ready)"
 
@@ -15,12 +29,8 @@ RUN apt-get update && apt-get install -y \
   --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
-# Check to see if the the version included in the base runtime satisfies
-# '>=7.6', if not then do an npm install of the latest available
-# version that satisfies it.
-RUN /usr/local/bin/install_node '>=7.6'
-
 COPY . /app/
+WORKDIR /app/
 
 # Add botrender as a user
 RUN groupadd -r botrender && useradd -r -g botrender -G audio,video botrender \
@@ -31,11 +41,13 @@ RUN groupadd -r botrender && useradd -r -g botrender -G audio,video botrender \
 USER botrender
 
 EXPOSE 8080
+ENV PORT=8080
 
 RUN npm install || \
   ((if [ -f npm-debug.log ]; then \
       cat npm-debug.log; \
     fi) && false)
+
 
 ENTRYPOINT [ "npm" ]
 CMD ["run", "start"]
